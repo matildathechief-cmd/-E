@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기록자의 펜 - 근현대사 문화유산 브랜딩</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Custom Font Family for Korean readability and Tailwind override */
+        body {
+            font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            background-color: #fcfbf9; /* A softer white/stone color */
+        }
+        /* Custom Scrollbar for a more refined look */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background-color: #A67C52;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-track {
+            background-color: #f5e6d3;
+        }
+        
+        /* Define custom colors for use in inline styles and JS functions */
+        :root {
+            --color-primary: #A67C52; /* Darker Gold/Brown */
+            --color-secondary: #D4A574; /* Lighter Gold/Tan */
+            --color-background: #F5E6D3; /* Pale Cream/Beige */
+            --color-dark: #18181b; /* Zinc 900 */
+        }
+
+        /* Utility classes for hover effects that are hard to do inline without JIT */
+        .btn-primary:hover {
+            background-color: #8B6F47 !important;
+        }
+        .text-accent {
+            color: var(--color-secondary);
+        }
+        .bg-accent-light {
+            background-color: var(--color-background);
+        }
+
+    </style>
+
+    <script>
+        // Tailwind Configuration to allow custom colors globally
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'primary-gold': '#A67C52',
+                        'secondary-tan': '#D4A574',
+                        'background-cream': '#F5E6D3',
+                    },
+                },
+            },
+        }
+
+        // --- GLOBAL STATE MANAGEMENT (Mimicking React Hooks) ---
+        const pages = [
+            { id: 'home', name: '홈', icon: 'Home' },
+            { id: 'service', name: '서비스', icon: 'FileText' },
+            { id: 'portfolio', name: '프로젝트', icon: 'Briefcase' },
+            { id: 'contact', name: '문의하기', icon: 'Mail' }
+        ];
+
+        const initialProjects = [
+            {
+                id: 1,
+                title: '구 동양척식주식회사 대전지점',
+                subtitle: '브랜딩 & 전시 기획',
+                tag: '완료',
+                concept: '침묵하는 기록: 역사의 펜 끝이 멈춘 자리',
+                problem: '국가유산임에도 불구하고, 외관의 평범함과 설명 방식의 경직성으로 인해 관람객들이 역사적 무게감을 체감하지 못함',
+                slogan: '"지나치지 마십시오. 당신이 서 있는 이 자리가, 한때 이 땅의 운명을 쥐었던 곳입니다."',
+                copyExample: '"이곳은 상가가 아닙니다. 1920년, 대전의 근대적 약탈이 시작된 기록의 공간입니다."',
+                results: [
+                    '온라인 채널 바이럴 콘텐츠 조회수 45% 증가',
+                    '방문객 평균 체류 시간 15분 연장',
+                    '젊은 세대(20-30대) 방문 비율 30% 상승'
+                ]
+            },
+            { id: 2, title: '대전 근현대사 박물관', subtitle: '전시 캡션 작성', tag: '진행중' },
+            { id: 3, title: '○○ 근대건축물', subtitle: '공간 컨셉 개발', tag: '예정' },
+            { id: 4, title: '역사문화거리 조성', subtitle: '스토리텔링 콘텐츠', tag: '예정' }
+        ];
+
+        const state = {
+            currentPage: 'home',
+            mobileMenuOpen: false,
+            selectedProject: null,
+            projects: initialProjects
+        };
+
+        function setState(newState) {
+            Object.assign(state, newState);
+            renderApp();
+        }
+
+        // --- UTILITY FUNCTIONS (SVG Icons) ---
+
+        /** Generates an SVG string for a Lucide icon */
+        function Icon(name, classes = '', size = 24) {
+            let path = '';
+            switch (name) {
+                case 'Home': path = '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>'; break;
+                case 'FileText': path = '<path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" x2="8" y1="13" y2="13"/><line x1="16" x2="8" y1="17" y2="17"/><line x1="10" x2="8" y1="9" y2="9"/>'; break;
+                case 'Briefcase': path = '<rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>'; break;
+                case 'Mail': path = '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>'; break;
+                case 'ChevronRight': path = '<path d="m9 18 6-6-6-6"/>'; break;
+                case 'Menu': path = '<line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/>'; break;
+                case 'X': path = '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>'; break;
+                default: path = '';
+            }
+            return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="${classes}">${path}</svg>`;
+        }
+
+
+        // --- COMPONENTS (HTML Generation Functions) ---
+
+        function renderNavBar() {
+            const current = state.currentPage;
+            const mobileOpen = state.mobileMenuOpen;
+
+            const desktopLinks = pages.map(page => `
+                <button
+                    onclick="setState({ currentPage: '${page.id}' })"
+                    class="px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+                        current === page.id ? 'text-zinc-900' : 'hover:bg-zinc-800'
+                    }"
+                    style="${current === page.id ? 'background-color: var(--color-primary);' : ''}"
+                >
+                    ${page.name}
+                </button>
+            `).join('');
+
+            const mobileLinks = pages.map(page => `
+                <button
+                    onclick="setState({ currentPage: '${page.id}', mobileMenuOpen: false })"
+                    class="block w-full text-left px-3 py-2 rounded-md text-sm font-medium ${
+                        current === page.id ? 'text-zinc-900' : 'hover:bg-zinc-800'
+                    }"
+                    style="${current === page.id ? 'background-color: var(--color-primary);' : ''}"
+                >
+                    ${page.name}
+                </button>
+            `).join('');
+
+            return `
+                <nav class="bg-zinc-900 text-amber-100 shadow-lg">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div class="flex justify-between items-center h-20">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 rounded-full flex items-center justify-center" style="background-color: var(--color-primary);">
+                                    ${Icon('FileText', 'w-6 h-6 text-white')}
+                                </div>
+                                <div>
+                                    <h1 class="text-xl font-bold">기록자의 펜</h1>
+                                    <p class="text-xs text-amber-200/80">The Scribe's Pen</p>
+                                </div>
+                            </div>
+                            
+                            <!-- Desktop Menu -->
+                            <div class="hidden md:flex space-x-8">
+                                ${desktopLinks}
+                            </div>
+
+                            <!-- Mobile Menu Button -->
+                            <button
+                                class="md:hidden"
+                                onclick="setState({ mobileMenuOpen: !state.mobileMenuOpen })"
+                            >
+                                ${mobileOpen ? Icon('X', 'w-6 h-6') : Icon('Menu', 'w-6 h-6')}
+                            </button>
+                        </div>
+
+                        <!-- Mobile Menu -->
+                        ${mobileOpen ? `<div class="md:hidden pb-4 space-y-1">${mobileLinks}</div>` : ''}
+                    </div>
+                </nav>
+            `;
+        }
+
+        function renderHomePage() {
+            return `
+                <div>
+                    <!-- Hero Section -->
+                    <section class="relative bg-gradient-to-br from-zinc-900 via-zinc-800 to-stone-900 text-amber-50 py-24 px-4">
+                        <div class="max-w-6xl mx-auto">
+                            <div class="grid md:grid-cols-2 gap-12 items-center">
+                                <div>
+                                    <div class="inline-block px-4 py-1 rounded-full text-sm mb-6" style="background-color: rgba(166, 124, 82, 0.3); border: 1px solid rgba(166, 124, 82, 0.5); color: var(--color-secondary);">
+                                        문화유산 브랜딩 전문가
+                                    </div>
+                                    <h2 class="text-5xl font-extrabold mb-6 leading-tight">
+                                        지나치기 쉬운 건물을,<br/>
+                                        <span class="text-accent">잊을 수 없는 유산</span>으로
+                                    </h2>
+                                    <p class="text-xl text-amber-100/80 mb-8">
+                                        시간의 무게를 담은 글로<br/>
+                                        근현대사 공간의 가치를 되살립니다
+                                    </p>
+                                    <button onclick="setState({ currentPage: 'contact' })" class="px-8 py-4 rounded-xl font-bold text-lg text-white transition-all shadow-lg flex items-center space-x-2 btn-primary" style="background-color: var(--color-primary);">
+                                        <span>프로젝트 시작하기</span>
+                                        ${Icon('ChevronRight', 'w-5 h-5', 20)}
+                                    </button>
+                                </div>
+                                <div class="bg-zinc-800/50 rounded-xl p-8 backdrop-blur" style="border: 2px solid rgba(166, 124, 82, 0.4);">
+                                    <div class="aspect-video bg-zinc-700/50 rounded-lg flex items-center justify-center text-center text-accent text-xl font-semibold">
+                                        [히어로 이미지]<br/>구 동양척식주식회사 대전지점
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Value Proposition -->
+                    <section class="py-20 px-4 bg-background-cream">
+                        <div class="max-w-6xl mx-auto">
+                            <h3 class="text-4xl font-bold text-center text-zinc-900 mb-4">
+                                왜 기록자의 펜인가?
+                            </h3>
+                            <p class="text-center text-zinc-600 mb-12 max-w-3xl mx-auto text-lg">
+                                근현대사 공간이 가진 '평범한 외관'을 넘어, 젊은 세대가 공감할 수 있는 스토리로 재탄생시킵니다
+                            </p>
+                            
+                            <div class="grid md:grid-cols-3 gap-8">
+                                ${[
+                                    { title: '공간 브랜딩', desc: '건축물의 역사와 정체성을 담은 슬로건과 컨셉 개발' },
+                                    { title: '전시 기획', desc: '방문자의 시선을 사로잡는 캡션 및 설명 패널 작성' },
+                                    { title: '콘텐츠 제작', desc: '소셜미디어와 웹사이트를 위한 매력적인 스토리텔링' }
+                                ].map(item => `
+                                    <div class="bg-white p-8 rounded-xl shadow-lg hover:shadow-2xl transition-all border border-zinc-100">
+                                        <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4" style="background-color: var(--color-primary);">
+                                            ${Icon('FileText', 'w-6 h-6 text-white')}
+                                        </div>
+                                        <h4 class="text-2xl font-bold text-zinc-900 mb-3">${item.title}</h4>
+                                        <p class="text-zinc-600">${item.desc}</p>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- CTA Section -->
+                    <section class="bg-zinc-900 text-amber-50 py-16 px-4">
+                        <div class="max-w-4xl mx-auto text-center">
+                            <h3 class="text-3xl font-bold mb-6">
+                                당신의 공간에 역사를 새기세요
+                            </h3>
+                            <p class="text-amber-100/80 mb-8 text-lg">
+                                대전 근현대사 문화유산 브랜딩 전문가, 김서현과 함께합니다
+                            </p>
+                            <button onclick="setState({ currentPage: 'contact' })" class="px-10 py-4 rounded-xl font-bold text-lg text-white transition-all shadow-md btn-primary" style="background-color: var(--color-primary);">
+                                무료 상담 신청
+                            </button>
+                        </div>
+                    </section>
+                </div>
+            `;
+        }
+
+        function renderServicePage() {
+            const services = [
+                {
+                    title: '1. 공간 컨셉 & 슬로건 개발',
+                    desc: '건축물의 역사적 배경과 현대적 의미를 융합한 브랜드 아이덴티티 구축',
+                    details: ['역사 리서치 및 분석', '핵심 메시지 도출', '슬로건 및 캐치프레이즈 작성']
+                },
+                {
+                    title: '2. 전시 캡션 & 설명 패널',
+                    desc: '방문객의 이해와 공감을 이끌어내는 전시 텍스트 기획 및 작성',
+                    details: ['전시 동선 기획', '캡션 작성 (한/영)', '인포그래픽 텍스트']
+                },
+                {
+                    title: '3. 디지털 콘텐츠',
+                    desc: '웹사이트, SNS, 브로슈어를 위한 매력적인 스토리텔링 콘텐츠',
+                    details: ['웹사이트 소개 콘텐츠', 'SNS 포스팅 기획', '홍보 브로슈어 작성']
+                }
+            ];
+
+            const serviceList = services.map(service => `
+                <div class="bg-white p-8 rounded-xl shadow-xl border-l-4 border-primary-gold">
+                    <h3 class="text-2xl font-bold text-zinc-900 mb-3">${service.title}</h3>
+                    <p class="text-zinc-600 mb-4">${service.desc}</p>
+                    <ul class="space-y-2">
+                        ${service.details.map(detail => `
+                            <li class="flex items-center text-zinc-700">
+                                ${Icon('ChevronRight', 'w-4 h-4 mr-2 text-primary-gold', 16)}
+                                ${detail}
+                            </li>
+                        `).join('')}
+                    </ul>
+                </div>
+            `).join('');
+
+            return `
+                <div class="py-16 px-4 bg-background-cream">
+                    <div class="max-w-6xl mx-auto">
+                        <h2 class="text-4xl font-bold text-zinc-900 mb-4">서비스 소개</h2>
+                        <p class="text-zinc-600 text-xl mb-12">
+                            근현대사 공간의 가치를 극대화하는 전문 브랜딩 서비스
+                        </p>
+
+                        <div class="space-y-10">
+                            ${serviceList}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPortfolioPage() {
+            const selectedProject = state.selectedProject;
+            const projects = state.projects;
+
+            const projectDetailModal = selectedProject ? `
+                <div class="mb-12 bg-white rounded-xl shadow-xl p-8 border-4 border-primary-gold animate-in fade-in zoom-in-50">
+                    <div class="flex justify-between items-start mb-6">
+                        <div>
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 bg-background-cream text-primary-gold">
+                                ${selectedProject.tag}
+                            </span>
+                            <h3 class="text-3xl font-bold text-zinc-900">${selectedProject.title}</h3>
+                        </div>
+                        <button 
+                            onclick="setState({ selectedProject: null })"
+                            class="text-zinc-400 hover:text-zinc-600 p-1 transition-colors"
+                        >
+                            ${Icon('X', 'w-6 h-6', 24)}
+                        </button>
+                    </div>
+
+                    <div class="space-y-8">
+                        <!-- 컨셉 -->
+                        <div class="bg-gradient-to-r from-zinc-900 to-zinc-800 p-6 rounded-lg text-secondary-tan">
+                            <h4 class="text-sm font-bold mb-2 text-primary-gold">프로젝트 컨셉</h4>
+                            <p class="text-2xl font-bold italic leading-snug">"${selectedProject.concept}"</p>
+                        </div>
+
+                        <!-- 문제 정의 -->
+                        <div>
+                            <h4 class="text-xl font-bold text-zinc-900 mb-3 flex items-center">
+                                <span class="mr-2">📌</span> 핵심 문제
+                            </h4>
+                            <p class="text-zinc-700 leading-relaxed p-4 rounded-lg bg-background-cream border-l-4 border-primary-gold">
+                                ${selectedProject.problem}
+                            </p>
+                        </div>
+
+                        <!-- 슬로건 -->
+                        <div>
+                            <h4 class="text-xl font-bold text-zinc-900 mb-3 flex items-center">
+                                <span class="mr-2">💬</span> 개발 슬로건
+                            </h4>
+                            <blockquote class="text-xl text-zinc-800 italic pl-6 py-4 border-l-4 border-primary-gold bg-background-cream/70">
+                                ${selectedProject.slogan}
+                            </blockquote>
+                        </div>
+
+                        <!-- 카피 예시 -->
+                        <div>
+                            <h4 class="text-xl font-bold text-zinc-900 mb-3 flex items-center">
+                                <span class="mr-2">✍️</span> 핵심 카피 예시
+                            </h4>
+                            <div class="bg-zinc-900 p-6 rounded-lg text-secondary-tan shadow-inner">
+                                <p class="text-lg leading-relaxed">
+                                    ${selectedProject.copyExample}
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- 성과 -->
+                        <div>
+                            <h4 class="text-xl font-bold text-zinc-900 mb-3 flex items-center">
+                                <span class="mr-2">📈</span> 프로젝트 성과
+                            </h4>
+                            <div class="grid sm:grid-cols-3 gap-4">
+                                ${selectedProject.results.map((result, idx) => {
+                                    const value = idx === 0 ? '45%' : idx === 1 ? '+15분' : '30%';
+                                    return `
+                                        <div class="text-white p-5 rounded-xl shadow-lg" style="background: linear-gradient(135deg, var(--color-primary), #8B6F47);">
+                                            <div class="text-3xl font-bold mb-2">${value}</div>
+                                            <p class="text-sm text-amber-100/90">${result}</p>
+                                        </div>
+                                    `;
+                                }).join('')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            ` : '';
+
+            const projectGrid = projects.map((project) => {
+                const isClickable = !!project.concept;
+                const tagStyle = project.tag === '완료' 
+                    ? 'bg-background-cream text-primary-gold' 
+                    : project.tag === '진행중' 
+                    ? 'bg-blue-100 text-blue-800' 
+                    : 'bg-zinc-100 text-zinc-600';
+                
+                return `
+                    <div 
+                        onclick="${isClickable ? `setState({ selectedProject: state.projects.find(p => p.id === ${project.id}) })` : ''}"
+                        class="bg-white rounded-xl shadow-md overflow-hidden border border-zinc-200 transition-all ${
+                            isClickable ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02] hover:border-primary-gold' : ''
+                        }"
+                    >
+                        <div class="aspect-video bg-zinc-200/50 flex items-center justify-center text-zinc-400 font-medium">
+                            [프로젝트 이미지]
+                        </div>
+                        <div class="p-6">
+                            <span class="inline-block px-3 py-1 rounded-full text-xs font-bold mb-3 ${tagStyle}">
+                                ${project.tag}
+                            </span>
+                            <h3 class="text-xl font-bold text-zinc-900 mb-2">${project.title}</h3>
+                            <p class="text-zinc-600 mb-3">${project.subtitle}</p>
+                            ${isClickable ? `
+                                <button class="font-semibold text-sm flex items-center text-primary-gold">
+                                    <span>자세히 보기</span>
+                                    ${Icon('ChevronRight', 'w-4 h-4 ml-1', 16)}
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="py-16 px-4" style="background: linear-gradient(to bottom, var(--color-background), #fcfbf9);">
+                    <div class="max-w-6xl mx-auto">
+                        <h2 class="text-4xl font-bold text-zinc-900 mb-4">프로젝트 사례</h2>
+                        <p class="text-zinc-600 text-xl mb-12">
+                            기록자의 펜이 만든 변화를 확인하세요
+                        </p>
+
+                        ${projectDetailModal}
+
+                        <!-- 프로젝트 그리드 -->
+                        <div class="grid md:grid-cols-2 gap-8">
+                            ${projectGrid}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderContactPage() {
+            return `
+                <div class="py-16 px-4 bg-background-cream">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-4xl font-bold text-zinc-900 mb-4 text-center">문의하기</h2>
+                        <p class="text-zinc-600 text-xl mb-12 text-center">
+                            프로젝트 상담은 언제든 환영합니다
+                        </p>
+
+                        <div class="grid md:grid-cols-2 gap-8">
+                            <!-- Contact Form -->
+                            <div class="bg-white p-8 rounded-xl shadow-xl">
+                                <h3 class="text-2xl font-bold text-zinc-900 mb-6">상담 신청</h3>
+                                <form onsubmit="event.preventDefault(); alert('문의가 접수되었습니다. 곧 연락드리겠습니다.');" class="space-y-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-700 mb-1">이름</label>
+                                        <input type="text" class="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-gold" placeholder="홍길동" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-700 mb-1">이메일</label>
+                                        <input type="email" class="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-gold" placeholder="example@email.com" required />
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-700 mb-1">프로젝트 유형</label>
+                                        <select class="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-gold">
+                                            <option>공간 브랜딩</option>
+                                            <option>전시 기획</option>
+                                            <option>콘텐츠 제작</option>
+                                            <option>기타</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-zinc-700 mb-1">문의 내용</label>
+                                        <textarea rows="4" class="w-full px-4 py-2 border border-zinc-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-gold" placeholder="프로젝트에 대해 자세히 알려주세요" required></textarea>
+                                    </div>
+                                    <button type="submit" class="w-full text-white py-3 rounded-lg font-bold transition-colors btn-primary" style="background-color: var(--color-primary);">
+                                        상담 신청하기
+                                    </button>
+                                </form>
+                            </div>
+
+                            <!-- Provider Info & Process -->
+                            <div class="space-y-6">
+                                <div class="bg-zinc-900 text-amber-100 p-8 rounded-xl shadow-xl">
+                                    <h3 class="text-xl font-bold mb-4">제공자 정보</h3>
+                                    <div class="space-y-3 text-amber-100/80">
+                                        <p><strong class="text-accent">이름:</strong> 김서현</p>
+                                        <p><strong class="text-accent">핵심 역량:</strong> 뛰어난 글쓰기 및 커뮤니케이션 능력</p>
+                                        <p><strong class="text-accent">전문 분야:</strong> 근현대사 문화유산 브랜딩</p>
+                                        <p><strong class="text-accent">활동 지역:</strong> 대전 및 충청권</p>
+                                    </div>
+                                </div>
+
+                                <div class="bg-white p-8 rounded-xl shadow-md border-2 border-primary-gold/30">
+                                    <h3 class="text-xl font-bold text-zinc-900 mb-4">프로젝트 진행 절차</h3>
+                                    <ol class="space-y-3">
+                                        ${['상담 신청 및 미팅', '현장 답사 및 리서치', '컨셉 제안 및 수정', '콘텐츠 작성 및 납품'].map((step, idx) => `
+                                            <li class="flex items-start">
+                                                <span class="flex-shrink-0 w-6 h-6 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3" style="background-color: var(--color-primary);">
+                                                    ${idx + 1}
+                                                </span>
+                                                <span class="text-zinc-700 font-medium">${step}</span>
+                                            </li>
+                                        `).join('')}
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFooter() {
+            return `
+                <footer class="bg-zinc-900 text-amber-100 py-8 px-4 mt-auto">
+                    <div class="max-w-6xl mx-auto text-center">
+                        <p class="text-sm">&copy; 2025 기록자의 펜 (The Scribe's Pen). All rights reserved.</p>
+                        <p class="text-xs text-amber-200/60 mt-2">
+                            "지나치기 쉬운 건물을, 잊을 수 없는 유산으로 만듭니다."
+                        </p>
+                    </div>
+                </footer>
+            `;
+        }
+
+        function renderDesignNote() {
+            return `
+                <div class="fixed bottom-4 right-4 bg-white p-4 rounded-lg shadow-xl border-2 border-stone-500 max-w-xs z-50">
+                    <p class="text-xs text-zinc-600">
+                        <strong class="text-stone-700">🎨 디자인 노트:</strong><br/>
+                        크래프트지 느낌의 베이지/브라운 톤으로 차분하고 빈티지한 분위기를 연출했습니다. 상단 네비게이션으로 4개 페이지 전환이 가능합니다.
+                    </p>
+                </div>
+            `;
+        }
+
+        // --- MAIN APP RENDER FUNCTION ---
+        function renderApp() {
+            const appRoot = document.getElementById('app-root');
+            if (!appRoot) return;
+
+            let pageContent = '';
+            switch (state.currentPage) {
+                case 'home': pageContent = renderHomePage(); break;
+                case 'service': pageContent = renderServicePage(); break;
+                case 'portfolio': pageContent = renderPortfolioPage(); break;
+                case 'contact': pageContent = renderContactPage(); break;
+                default: pageContent = renderHomePage();
+            }
+
+            appRoot.innerHTML = `
+                ${renderNavBar()}
+                <main class="flex-grow">
+                    ${pageContent}
+                </main>
+                ${renderFooter()}
+                ${renderDesignNote()}
+            `;
+
+            // Scroll to top on page change
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Initialize the application on window load
+        window.onload = () => {
+            renderApp();
+        };
+
+    </script>
+</head>
+<body class="min-h-screen flex flex-col bg-stone-100">
+    <!-- The main application root where content will be rendered -->
+    <div id="app-root">
+        <!-- Content will be injected here by renderApp() -->
+    </div>
+</body>
+</html>
